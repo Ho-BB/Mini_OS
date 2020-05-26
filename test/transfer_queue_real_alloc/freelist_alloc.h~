@@ -1,0 +1,80 @@
+
+
+#ifndef __FREELIST_ALLOC__
+#define __FREELIST_ALLOC__
+
+#include "inc/stm32h743.h"
+
+/*
+  FREELIST ALLOC :
+
+  free_block : 
+  This structure is allocated on the memory that is managed by the allocator.
+  Each block records its length and the address of the next block if any 
+  (0 indicates the last block).
+
+  freelist_alloc :
+  This structure is intended to be allocated statically. It records the address
+  of the first free block, the total amount of free memory remaining (without 
+  substracting the space taken up by the free_blocks), the total amount of 
+  memory used (again, free_blocks struct storage included) and the number of
+  fragment (or number of free_blocks) this is 1 after init.
+
+  Memory is allocated with a word granularity and the pointer to the memory to
+  be managed passed to init, as well as its length have to be 4 bytes aligned.
+  This way all alignment issues are avoided.
+  The minimum length for the memory passed to init is 12 bytes (8 for the 
+  free_block and 4 to be allocated).
+
+  The alloc function iterates over the free_block list until it finds a block
+  of sufficient size (defined as exactly the right size or at least 12 bytes 
+  more than the requested size, so that the remaining memory can be inserted in
+  the free_block list).
+  If the block found was exactly the right size then the function returns the
+  address to that block + 8 (so that the metadata of the free_block is "behind"
+  the returned address, the next field is then irrelevant but len will be used 
+  when freeing). It also updates the previous block so that it points to the 
+  following block.
+  If the block found was at least 12 bytes more then the function splits it, 
+  creates a new free_block struct on the part that is not to be allocated, fills
+  in the len and next field, then updates the prevous block so that it points to
+  the newly created free_block. It also updates the len field of the allocated
+  block so that it reflects the actual allocated size. Then it returns the 
+  address of the allocated block + 8.
+  If no block of sufficient size is found then 0 is returned.
+
+  The free function iterates over the free_block list until it finds a 
+  free_block whose address is superior to its own or until it reaches the end
+  of the free_block list.
+  When it find that free_block it checks if the block to be freed can be merged
+  with the previous block, or the following or both. If there is an overlap with
+  the other blocks then an error is reported and no memory is freed.
+  If the block to be freed can't be merged then it updates the next field of the
+  previous block to point to the newly freed memory aswell as the next field
+  of the newly freed memory to point to the following block.
+  If it is possible to merge, the len field of the lowest address block is 
+  updated to cover the merged block(s). The next field is also updated in some
+  merge cases.
+  
+
+*/
+
+typedef struct free_block{
+  u32 len;
+  struct free_block *next;
+} free_block_t;
+
+typedef struct freelist_alloc{
+  free_block_t *freelist;
+  u32 free;
+  u32 used;
+  u32 frag;
+} freelist_alloc_t;
+
+u32 fa_init(freelist_alloc_t *fa, u32 ptr, u32 len);
+
+u32 fa_alloc(freelist_alloc_t *fa, u32 bytes);
+
+u32 fa_free(freelist_alloc_t *fa, u32 ptr);
+
+#endif

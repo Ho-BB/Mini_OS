@@ -1,0 +1,13 @@
+
+
+#ifndef __LIST__
+#define __LIST__
+
+#include "inc/stm32h743.h"
+
+typedef struct list{
+  u32 data;
+  struct list *next;
+} list_t;
+
+#endif

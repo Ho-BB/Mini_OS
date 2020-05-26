@@ -1,0 +1,16 @@
+
+
+#include "syscall.h"
+
+
+__attribute__((naked))
+void syscall_usart_open();
+
+__attribute__((naked))
+void syscall_usart_close();
+
+__attribute__((naked))
+void syscall_usart_write(u8 *buf, u32 len);
+
+__attribute__((naked))
+void syscall_usart_read(u8 *buf, u32 len, u32 *read);

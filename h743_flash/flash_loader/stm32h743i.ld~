@@ -1,0 +1,16 @@
+
+
+MEMORY
+{
+	RAM : ORIGIN = 0x20000000, LENGTH = 20k
+	FLASH : ORIGIN = 0x08000000, LENGTH = 32k
+}
+
+SECTIONS
+{
+	.text :
+	{
+		*(.text)
+		*(.data)
+	} > FLASH
+}

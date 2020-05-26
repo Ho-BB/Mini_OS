@@ -1,0 +1,12 @@
+
+
+#ifndef __H743_MPU__
+#define __H743_MPU__
+
+#include "inc/typedef.h"
+
+typedef struct h743_mpu{
+  
+} h743_mpu_t;
+
+#endif

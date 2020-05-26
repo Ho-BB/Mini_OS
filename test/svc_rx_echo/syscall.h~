@@ -1,0 +1,17 @@
+
+
+#ifndef __SYSCALL__
+#define __SYSCALL__
+
+#include "inc/stm32h743.h"
+#include "task.h"
+
+void syscall_usart_open();
+
+void syscall_usart_close();
+
+void syscall_usart_write(u8 *buf, u32 len);
+
+void syscall_usart_read(u8 *buf, u32 len, u32 *read);
+
+#endif

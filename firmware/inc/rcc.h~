@@ -1,0 +1,191 @@
+
+
+#ifndef __H743_RCC__
+#define __H743_RCC__
+
+#include "inc/typedef.h"
+
+typedef struct h743_rcc{
+  u32 CR;
+  u32 ICSCR;
+  u32 CRRCR;
+  u32 CSICFGR;
+  u32 CFGR;
+  u32 reserved1;
+  u32 D1CFGR;
+  u32 D2CFGR;
+  u32 D3CFGR;
+  u32 reserved2;
+  u32 PLLCKSELR;
+  u32 PLLCFGR;
+  u32 PLL1DIVR;
+  u32 PLL1FRACR;
+  u32 PLL2DIVR;
+  u32 PLL2FRACR;
+  u32 PLL3DIVR;
+  u32 PLL3FRACR;
+  u32 reserved3;
+  u32 D1CCIPR;
+  u32 D2CCIP1R;
+  u32 D2CCIP2R;
+  u32 D3CCIPR;
+  u32 reserved4;
+  u32 CIER;
+  u32 CIFR;
+  u32 CICR;
+  u32 reserved5;
+  u32 BDCR;
+  u32 CSR;
+  u32 reserved6;
+  u32 AHB3RSTR;
+  u32 AHB1RSTR;
+  u32 AHB2RSTR;
+  u32 AHB4RSTR;
+  u32 APB3RSTR;
+  u32 APB1LRSTR;
+  u32 APB1HRSTR;
+  u32 APB2RSTR;
+  u32 APB4RSTR;
+  u32 GCR;
+  u32 reserved7;
+  u32 D3AMR;
+  u32 reserved8[9];
+  u32 RSR;
+  u32 AHB3ENR;
+  u32 AHB1ENR;
+  u32 AHB2ENR;
+  u32 AHB4ENR;
+  u32 APB3ENR;
+  u32 APB1LENR;
+  u32 APB1HENR;
+  u32 APB2ENR;
+  u32 APB4ENR;
+  u32 reserved9;
+  u32 AHB3LPENR;
+  u32 AHB1LPENR;
+  u32 AHB2LPENR;
+  u32 AHB4LPENR;
+  u32 APB3LPENR;
+  u32 APB1LLPENR;
+  u32 APB1HLPENR;
+  u32 APB2LPENR;
+  u32 APB4LPENR;
+} h743_rcc_t;
+
+
+#define RCC                   ((volatile h743_rcc_t *) 0x58024400)
+
+
+/* GPIO */
+#define RCC_AHB4_GPIOA        (1 << 0)
+#define RCC_AHB4_GPIOB        (1 << 1)
+#define RCC_AHB4_GPIOC        (1 << 2)
+#define RCC_AHB4_GPIOD        (1 << 3)
+#define RCC_AHB4_GPIOE        (1 << 4)
+#define RCC_AHB4_GPIOF        (1 << 5)
+#define RCC_AHB4_GPIOG        (1 << 6)
+#define RCC_AHB4_GPIOH        (1 << 7)
+#define RCC_AHB4_GPIOI        (1 << 8)
+#define RCC_AHB4_GPIOJ        (1 << 9)
+#define RCC_AHB4_GPIOK        (1 << 10)
+
+/* USART */
+#define RCC_APB2_USART1       (1 << 4)
+#define RCC_APB1L_USART2      (1 << 17)
+#define RCC_APB1L_USART3      (1 << 18)
+#define RCC_APB1L_UART4       (1 << 19)
+#define RCC_APB1L_UART5       (1 << 20)
+#define RCC_APB2_USART6       (1 << 5)
+#define RCC_APB1L_UART7       (1 << 30)
+#define RCC_APB1L_UART8       (1 << 31)
+
+/* SPI */
+#define RCC_APB2_SPI1         (1 << 12)
+#define RCC_APB1L_SPI2        (1 << 14)
+#define RCC_APB1L_SPI3        (1 << 15)
+#define RCC_APB2_SPI4         (1 << 13)
+#define RCC_APB2_SPI5         (1 << 20)
+#define RCC_APB4_SPI6         (1 << 5)
+
+/* PLL */
+#define RCC_PLL1              (1 << 24)
+#define RCC_PLL2              (1 << 26)
+#define RCC_PLL3              (1 << 28)
+
+/* TIMER */
+#define RCC_APB1L_TIM6        (1 << 4)
+#define RCC_APB1L_TIM7        (1 << 5)
+
+/* DMA */
+#define RCC_AHB1_DMA1         (1 << 0)
+#define RCC_AHB1_DMA2         (1 << 1)
+
+/* Enable PLLs */
+#define h743_rcc_enable_pll(pll)		\
+  RCC->CR |= pll
+
+/* Disable PLLs */
+#define h743_rcc_disable_pll(pll)		\
+  RCC->CR &= ~pll
+
+/* Wait PLL locked */
+#define h743_rcc_wait_pll_locked(pll)		\
+  while(!(RCC->CR & (pll << 1)))
+
+/* Reset peripheral */
+#define h743_rcc_reset_ahb1(per)		\
+  RCC->AHB1RSTR |= per;				\
+  RCC->AHB1RSTR &= ~per
+
+#define h743_rcc_reset_ahb4(per)		\
+  RCC->AHB4RSTR |= per;				\
+  RCC->AHB4RSTR &= ~per
+
+#define h743_rcc_reset_apb1l(per)		\
+  RCC->APB1LRSTR |= per;			\
+  RCC->APB1LRSTR &= ~per
+
+#define h743_rcc_reset_apb2(per)		\
+  RCC->APB2RSTR |= per;				\
+  RCC->APB2RSTR &= ~per
+
+#define h743_rcc_reset_apb4(per)		\
+  RCC->APB4RSTR |= per;				\
+  RCC->APB4RSTR &= ~per
+
+
+/* Enable peripheral clock */
+#define h743_rcc_enable_clock_ahb1(per)		\
+  RCC->AHB1ENR |= per
+
+#define h743_rcc_enable_clock_ahb4(per)		\
+  RCC->AHB4ENR |= per
+
+#define h743_rcc_enable_clock_apb1l(per)	\
+  RCC->APB1LENR |= per
+
+#define h743_rcc_enable_clock_apb2(per)		\
+  RCC->APB2ENR |= per
+
+#define h743_rcc_enable_clock_apb4(per)		\
+  RCC->APB4ENR |= per
+
+
+/* Disable peripheral clock */
+#define h743_rcc_disable_clock_ahb1(per)	\
+  RCC->AHB1ENR &= ~per
+
+#define h743_rcc_disable_clock_ahb4(per)	\
+  RCC->AHB4ENR &= ~per
+
+#define h743_rcc_disable_clock_apb1l(per)	\
+  RCC->APB1LENR &= ~per
+
+#define h743_rcc_disable_clock_apb2(per)	\
+  RCC->APB2ENR &= ~per
+
+#define h743_rcc_disable_clock_apb4(per)	\
+  RCC->APB4ENR &= ~per
+
+
+#endif

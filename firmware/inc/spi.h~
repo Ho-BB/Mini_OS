@@ -1,0 +1,103 @@
+
+
+#ifndef __H743_SPI__
+#define __H743_SPI__
+
+#include "inc/typedef.h"
+
+typedef struct h743_spi{
+  u32 CR1;
+  u32 CR2;
+  u32 CFG1;
+  u32 CFG2;
+  u32 IER;
+  u32 SR;
+  u32 IFCR;
+  u32 TXDR;
+  u32 reserved1[3];
+  u32 RXDR;
+  u32 reserved2[3];
+  u32 CRCPOLY;
+  u32 TXCRC;
+  u32 RXCRC;
+  u32 UDRDR;
+  u32 I2SCFGR;
+} h743_spi_t;
+
+
+/* 6 SPI */
+#define SPI1                  ((volatile h743_spi_t *) 0x40013000)
+#define SPI2                  ((volatile h743_spi_t *) 0x40003800)
+#define SPI3                  ((volatile h743_spi_t *) 0x40003C00)
+#define SPI4                  ((volatile h743_spi_t *) 0x40013400)
+#define SPI5                  ((volatile h743_spi_t *) 0x40015000)
+#define SPI6                  ((volatile h743_spi_t *) 0x58001400)
+
+typedef enum h743_spi_mbr
+  {
+   clock_div_2   = (0 << 28),
+   clock_div_4   = (1 << 28),
+   clock_div_8   = (2 << 28),
+   clock_div_16  = (3 << 28),
+   clock_div_32  = (4 << 28),
+   clock_div_64  = (5 << 28),
+   clock_div_128 = (6 << 28),
+   clock_div_256 = (7 << 28)
+  }h743_spi_mbr_e;
+
+#define SPI_IRQ_TXP      (1 << 1)
+#define SPI_IRQ_RXP      (1 << 0)
+
+typedef struct h743_spi_conf{
+  h743_spi_mbr_e mbr;
+  u8 fifo_threshold;
+  u8 frame_size;
+  
+  bool clock_idle_high;
+  bool clock_phase_second;
+  bool lsb_first;
+  bool master;
+  
+  u32 irq_en;
+} h743_spi_conf_t;
+
+#define h743_spi_init_conf(conf)				\
+  conf = (h743_spi_conf_t) { .mbr = clock_div_256,		\
+			     .fifo_threshold = 1,		\
+			     .frame_size = 8,			\
+			     .clock_idle_high = FALSE,		\
+			     .clock_phase_second = FALSE,	\
+			     .lsb_first = FALSE,		\
+			     .master = TRUE,			\
+			     .irq_en = 0			\
+  };
+
+void h743_spi_conf(volatile h743_spi_t *spix,
+		   h743_spi_conf_t *conf);
+
+#define h743_spi_enable(spix)			\
+  spix->CR1 |= (1 << 0);			\
+  spix->CR1 |= (1 << 9)
+
+#define h743_spi_disable(spix)			\
+  spix->CR1 &= ~(1 << 0)
+
+#define h743_spi_receive_byte(spix)		\
+  (*((u8 *) &spix->RXDR))
+
+#define h743_spi_transmit_byte(spix, data)	\
+  *((u8 *) &spix->TXDR) = data
+
+#define h743_spi_txp(spix)			\
+  (spix->SR & (1 << 1))
+
+#define h743_spi_rxp(spix)			\
+  (spix->SR & (1 << 0))
+
+#define h743_spi_wait_txp(spix)			\
+  while(!h743_spi_txp(spix))
+
+#define h743_spi_wait_rxp(spix)			\
+  while(!h743_spi_rxp(spix))
+
+#endif

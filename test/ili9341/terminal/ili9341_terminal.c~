@@ -1,0 +1,127 @@
+
+
+#include "ili9341_terminal.h"
+
+static void cpaset(ili9341_terminal_t *ili, u32 caset, u32 start, u32 end){
+
+  u32 cmd;
+
+  if(caset)
+    cmd = 0x2A;
+  else
+    cmd = 0x2B;
+  
+  h743_gpio_reset(ili->gpio_csn, ili->pin_csn);
+  h743_gpio_reset(ili->gpio_dcx, ili->pin_dcx);
+  
+  h743_spi_transmit_byte(ili->spi, cmd);
+  h743_spi_wait_rxp(ili->spi);
+  cmd = h743_spi_receive_byte(ili->spi);
+
+  h743_gpio_set(ili->gpio_dcx, ili->pin_dcx);
+
+  h743_spi_transmit_byte(ili->spi, start >> 8);
+  h743_spi_wait_rxp(ili->spi);
+  cmd = h743_spi_receive_byte(ili->spi);
+
+  h743_spi_transmit_byte(ili->spi, start & 0x0FF);
+  h743_spi_wait_rxp(ili->spi);
+  cmd = h743_spi_receive_byte(ili->spi);
+
+  h743_spi_transmit_byte(ili->spi, end >> 8);
+  h743_spi_wait_rxp(ili->spi);
+  cmd = h743_spi_receive_byte(ili->spi);
+
+  h743_spi_transmit_byte(ili->spi, end & 0x0FF);
+  h743_spi_wait_rxp(ili->spi);
+  cmd = h743_spi_receive_byte(ili->spi);
+
+  h743_gpio_set(ili->gpio_csn, ili->pin_csn);
+}
+
+static void mem_write(ili9341_terminal_t *ili){
+
+  u32 discard;
+  
+  h743_gpio_reset(ili->gpio_csn, ili->pin_csn);
+  h743_gpio_reset(ili->gpio_dcx, ili->pin_dcx);
+
+  h743_spi_transmit_byte(ili->spi, 0x2C);
+  h743_spi_wait_rxp(ili->spi);
+  discard = h743_spi_receive_byte(ili->spi);
+
+  h743_gpio_set(ili->gpio_dcx, ili->pin_dcx);
+}
+
+void ili9341_term_clear_screen(ili9341_terminal_t *ili,
+			       color_t clear_color){
+
+  u32 i;
+  u32 discard;
+  
+  cpaset(ili, 1, 0, ILI9341_SCREEN_COL - 1);
+  cpaset(ili, 0, 0, ILI9341_SCREEN_LIN - 1);
+
+  mem_write(ili);
+
+  for(i = 0; i < ILI9341_SCREEN_COL * ILI9341_SCREEN_LIN; i++){
+    h743_spi_transmit_byte(ili->spi, clear_color.b);
+    h743_spi_wait_rxp(ili->spi);
+    discard = h743_spi_receive_byte(ili->spi);
+
+    h743_spi_transmit_byte(ili->spi, clear_color.g);
+    h743_spi_wait_rxp(ili->spi);
+    discard = h743_spi_receive_byte(ili->spi);
+
+    h743_spi_transmit_byte(ili->spi, clear_color.r);
+    h743_spi_wait_rxp(ili->spi);
+    discard = h743_spi_receive_byte(ili->spi);
+  }
+
+  h743_gpio_set(ili->gpio_csn, ili->pin_csn);
+}
+
+void ili9341_term_print_char(ili9341_terminal_t *ili,
+			     color_t foreground,
+			     color_t background,
+			     bitmap8x16_t *font,
+			     u32 col,
+			     u32 lin,
+			     u8 c){
+
+  u32 i;
+  int j;
+  bitmap8x16_t glyph;
+  color_t cur_color;
+  u32 discard;
+
+  cpaset(ili, 1, col << 3, (col << 3) + 7);
+  cpaset(ili, 0, lin << 4, (lin << 4) + 15);
+
+  mem_write(ili);
+
+  glyph = font[c];
+
+  for(i = 0; i < 16; i++){
+    for(j = 7; j >= 0; j--){
+      if((glyph.data[i] >> j) & 1)
+	cur_color = foreground;
+      else
+	cur_color = background;
+
+      h743_spi_transmit_byte(ili->spi, cur_color.b);
+      h743_spi_wait_rxp(ili->spi);
+      discard = h743_spi_receive_byte(ili->spi);
+
+      h743_spi_transmit_byte(ili->spi, cur_color.g);
+      h743_spi_wait_rxp(ili->spi);
+      discard = h743_spi_receive_byte(ili->spi);
+
+      h743_spi_transmit_byte(ili->spi, cur_color.r);
+      h743_spi_wait_rxp(ili->spi);
+      discard = h743_spi_receive_byte(ili->spi);
+    }
+  }
+  
+  h743_gpio_set(ili->gpio_csn, ili->pin_csn);
+}

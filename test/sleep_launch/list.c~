@@ -1,0 +1,16 @@
+
+
+#include "list.h"
+
+
+void list_init(list_t *e, u32 data){
+
+  e.data = data;
+  e.next = (list_t *) 0;
+}
+
+void list_insert(list_t *l, list_t *e);
+
+void list_remove(list_t *l, u32 data);
+
+void list_length(list_t *l);

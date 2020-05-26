@@ -1,0 +1,55 @@
+
+
+#ifndef __H743_DMAMUX__
+#define __H743_DMAMUX__
+
+#include "inc/typedef.h"
+
+typedef struct h743_dmamux{
+  u32 CCR[16];
+  u32 reserved1[16];
+  u32 CSR;
+  u32 CFR;
+  u32 reserved2[30];
+  u32 RGCR[8];
+  u32 reserved[8];
+  u32 RGSR;
+  u32 RGCFR;
+} h743_dmamux_t;
+
+/* 
+   DMAMUX1 is for DMA : channels 0-7  map to DMA1 0-7
+                      | channels 8-15 map to DMA2 0-7
+   DMAMUX2 is for BDMA, only 8 channels out of 16 are available
+*/
+#define DMAMUX1               ((volatile h743_dmamux_t *) 0x40020800)
+#define DMAMUX2               ((volatile h743_dmamux_t *) 0x58025800)
+
+/* DMAMUX request inputs */
+#define DMAMUX_SPI2_RX        39
+#define DMAMUX_SPI2_TX        40
+
+#define DMAMUX_USART2_RX      43
+#define DMAMUX_USART2_TX      44
+
+#define DMAMUX_TIM6_UP        69
+#define DMAMUX_TIM7_UP        70
+
+typedef struct h743_dmamux_conf{
+  u32 request;
+} h743_dmamux_conf_t;
+
+#define h743_dmamux_init_conf(conf)		\
+  conf = (h743_dmamux_conf_t) { .request = 0 };
+
+void h743_dmamux_conf(volatile h743_dmamux_t *dmamuxx,
+		      u32 streamx,
+		      h743_dmamux_conf_t *conf);
+
+#define h743_dmamux_enable(dmamuxx, streamx)	\
+  dmamuxx->CCR[streamx] |= (1 << 9)
+
+#define h743_dmamux_disable(dmamuxx, streamx)	\
+  dmamuxx->CCR[streamx] &= ~(1 << 9)
+
+#endif

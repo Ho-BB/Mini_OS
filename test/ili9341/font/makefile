@@ -1,0 +1,8 @@
+
+OBJCOPY:=/home/cassius/arm/2019/gcc-arm-none-eabi-9-2019-q4-major/bin/arm-none-eabi-objcopy
+
+all : ctrld_font.o
+
+ctrld_font.o : ctrld_font.bin
+	$(OBJCOPY) -Ibinary -Barmv7e-m -Oelf32-littlearm $< $@
+	$(OBJCOPY) -Ielf32-littlearm --add-symbol ctrld_font=.data:00000000 $@ $@

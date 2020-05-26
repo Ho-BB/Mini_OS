@@ -1,0 +1,94 @@
+
+
+#include "inc/stm32h743.h"
+
+extern u8 __DTCM_START[];
+
+#define DMA_SOURCE       256
+#define DMA_SOURCE_LEN   4
+
+#define DMA_DESTINATION  512
+
+__attribute__((noreturn))
+void h743_reset_isr(){
+
+  h743_dma_conf_t dma_conf;
+  h743_gpio_conf_t gpio_conf;
+  h743_usart_conf_t usart_conf;
+  
+  h743_rcc_enable_clock_ahb1(RCC_AHB1_DMA1);
+  h743_rcc_enable_clock_ahb4(RCC_AHB4_GPIOD);
+  h743_rcc_enable_clock_ahb4(RCC_AHB4_GPIOI);
+  h743_rcc_enable_clock_apb1l(RCC_APB1L_USART2);
+
+  ARM_CPSIE;
+
+  h743_nvic_enable_irq(H743_IRQ_DMA1_STR0);
+
+  __DTCM_START[DMA_SOURCE + 0] = 'h';
+  __DTCM_START[DMA_SOURCE + 1] = 'e';
+  __DTCM_START[DMA_SOURCE + 2] = 'l';
+  __DTCM_START[DMA_SOURCE + 3] = 'l';
+  __DTCM_START[DMA_SOURCE + 4] = 'o';
+
+  h743_dma_init_conf(dma_conf);
+  h743_gpio_init_conf(gpio_conf);
+  h743_usart_init_conf(usart_conf);
+
+  gpio_conf.pin = 5;
+  gpio_conf.mode = alternate_function;
+  gpio_conf.alternate_function = 7;
+  h743_gpio_conf(GPIOD, &gpio_conf); //TX
+
+  gpio_conf.pin = 6;
+  gpio_conf.mode = alternate_function;
+  gpio_conf.alternate_function = 7;
+  h743_gpio_conf(GPIOD, &gpio_conf); //RX
+
+  gpio_conf.pin = 6;
+  gpio_conf.mode = output;
+  h743_gpio_conf(GPIOI, &gpio_conf);
+
+  h743_usart_conf(USART2, &usart_conf, 64000000);
+  h743_usart_enable(USART2);
+
+  dma_conf.trbuff = TRUE;
+  dma_conf.pinc = TRUE;
+  dma_conf.dir = mem_to_mem;
+  dma_conf.num_data = DMA_SOURCE_LEN;
+  dma_conf.per_address = (u32) (__DTCM_START + DMA_SOURCE);
+  dma_conf.mem_address_0 = (u32) (__DTCM_START + DMA_DESTINATION);
+  dma_conf.fifo_mode = TRUE;
+  dma_conf.fifo_threshold = fifo_1_quarter;
+  h743_dma_conf(DMA1, 0, &dma_conf);
+
+  h743_usart_wait_rxne(USART2);
+  h743_usart_write_strn(USART2, (u8 *) "GO\n", 3);
+  h743_usart_write_u32(USART2, DMA1->STREAM[0].CR);
+  h743_usart_write_strn(USART2, (u8 *) "\n", 1);
+  h743_usart_write_u32(USART2, DMA1->ISR[0]);
+  h743_usart_write_strn(USART2, (u8 *) "\n", 1);
+  h743_dma_enable(DMA1, 0);
+
+  h743_dma_wait_disabled(DMA1, 0);
+  
+  h743_usart_write_u32(USART2, DMA1->STREAM[0].CR);
+  h743_usart_write_strn(USART2, (u8 *) "\n", 1);
+  h743_usart_write_u32(USART2, DMA1->ISR[0]);
+  h743_usart_write_strn(USART2, (u8 *) "\n", 1);
+  
+  while(1);
+}
+
+
+void h743_dma1_str0_isr(){
+
+  h743_gpio_set(GPIOI, 6);
+
+  h743_usart_write_strn(USART2,
+			__DTCM_START + DMA_DESTINATION,
+			DMA_SOURCE_LEN);
+
+  h743_dma_eoi(DMA1, 0, DMA_IRQ_TC);
+  ARM_DSB;
+}

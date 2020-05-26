@@ -1,0 +1,18 @@
+
+
+#include "inc/mpu.h"
+
+
+void h743_mpu_conf(h743_mpu_conf_t *conf){
+
+  MPU->RNR = conf->region;
+
+  MPU->RBAR = conf->address & ~0x1F;
+
+  MPU->RASR =
+    ((!conf->executable) << 28) |
+    conf->access_permission |
+    conf->texcb |
+    (conf->shareable << 18) |
+    conf->size;
+}

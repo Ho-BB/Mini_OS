@@ -1,0 +1,9 @@
+
+
+#include "inc/gpio.h"
+
+void h743_gpio_conf(volatile h743_gpio_t *gpiox,
+		    h743_gpio_conf_t *conf){
+
+  
+}

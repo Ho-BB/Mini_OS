@@ -1,0 +1,14 @@
+
+
+#ifndef __TASK__
+#define __TASK__
+
+#include "inc/stm32h743.h"
+
+typedef struct task{
+  u32 entry;
+  u32 sp;
+  u32 pid;
+} task_t;
+
+#endif

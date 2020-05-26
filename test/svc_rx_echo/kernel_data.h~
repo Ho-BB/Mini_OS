@@ -1,0 +1,15 @@
+
+
+#ifndef __KERNEL_DATA__
+#define __KERNEL_DATA__
+
+#include "inc/stm32h743.h"
+
+extern u32 __AXI_SRAM_START[];
+
+typedef struct kernel_data{
+} kernel_data_t;
+
+#define KERNEL_DATA           ((kernel_data_t *) __AXI_SRAM_START[0])
+
+#endif

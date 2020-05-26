@@ -1,0 +1,98 @@
+
+
+#include "syscall.h"
+#include "echo_prog.h"
+#include "inc/stm32h743.h"
+
+
+__attribute__((noreturn))
+void h743_reset_isr(){
+
+  /* go in UNPRIVILEGED thread mode */
+  asm("\
+mrs r0, control\n					\
+orr r0, r0, #1\n					\
+msr control, r0\n					\
+isb							\
+");
+
+  ARM_CPSIE;
+
+  h743_gpio_conf_t gpio_conf;
+  
+  h743_rcc_enable_clock_ahb4(RCC_AHB4_GPIOI);
+
+  h743_gpio_init_conf(gpio_conf);
+
+  gpio_conf.pin = 6;
+  gpio_conf.mode = output;
+  h743_gpio_conf(GPIOI, &gpio_conf);
+
+  h743_gpio_set(GPIOI, 6);
+  
+  echo_prog();
+}
+
+
+__attribute__((naked))
+void h743_svcall_isr(){
+  
+  asm("\
+mov r0, sp\n					\
+b svchandler					\
+");
+}
+
+void enable_usart_2();
+
+void svchandler(u32 *sp){
+
+  switch(((u8 *) sp[6])[-2]){
+  case SVCN_OPEN :
+    //Enable Usart 2 , execution get atleast to here and usart is configured
+    //as it should
+    enable_usart_2();
+    break;
+  case SVCN_RECEIVE :
+    //Poll Usart 2 rxne and modify sp[0] to return the value
+    h743_usart_wait_rxne(USART2);
+    sp[0] = h743_usart_receive(USART2);
+    break;
+  case SVCN_TRANSMIT :
+    //Poll Usart 2 txe and transmit sp[0]
+    h743_usart_wait_txe(USART2);
+    h743_usart_transmit(USART2, sp[0]);
+    break;
+  case SVCN_CLOSE :
+    //Disable Usart 2
+    h743_usart_disable(USART2);
+    break;
+  }
+}
+
+void enable_usart_2(){
+
+  h743_gpio_conf_t gpio_conf;
+  h743_usart_conf_t usart_conf;
+
+  h743_rcc_enable_clock_ahb4(RCC_AHB4_GPIOD);
+  h743_rcc_enable_clock_apb1l(RCC_APB1L_USART2);
+
+  h743_gpio_init_conf(gpio_conf);
+  h743_usart_init_conf(usart_conf);
+
+  gpio_conf.pin = 5;
+  gpio_conf.mode = alternate_function;
+  gpio_conf.alternate_function = 7;
+
+  h743_gpio_conf(GPIOD, &gpio_conf);  //TX
+
+  gpio_conf.pin = 6;
+  gpio_conf.mode = alternate_function;
+  gpio_conf.alternate_function = 7;
+
+  h743_gpio_conf(GPIOD, &gpio_conf);  //RX
+
+  h743_usart_conf(USART2, &usart_conf, 64000000);
+  h743_usart_enable(USART2);
+}
